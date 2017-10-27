@@ -15,8 +15,6 @@
 
 #ifdef __VIVADO__
 	#include "DataMemory.h"
-#else 
-	#include "DataMemoryCatapult.h"
 #endif
 
 using namespace std;
