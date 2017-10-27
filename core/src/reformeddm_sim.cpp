@@ -1,5 +1,5 @@
 /* vim: set ts=4 ai nu: */
-#include "elfFile.h"
+#include <lib/elfFile.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -9,8 +9,8 @@
 #include <map>
 #include <iostream>
 #include <string.h>
-#include "core.h"
-#include "portability.h"
+#include <core.h>
+#include <portability.h>
 //#include "sds_lib.h"
 
 #ifdef __VIVADO__
@@ -154,11 +154,11 @@ int main(){
     	std::cout << std::dec << i << " : ";
     	std::cout << std::hex << debug_out[i] << std::endl;
     }*/
-    std::cout << "dm" <<std::endl;
-    for(int i = 0;i<8192;i++){
-        	std::cout << std::dec << i << " : ";
-        	std::cout << std::dec << dm_out[i] << std::endl;
-     }
+    //std::cout << "dm" <<std::endl;
+    //for(int i = 0;i<8192;i++){
+    //	   	std::cout << std::dec << i << " : ";
+    //    	std::cout << std::dec << dm_out[i] << std::endl;
+    // }
     free(dm_out);
     free(debug_out);
 	return 0;

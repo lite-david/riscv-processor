@@ -1,10 +1,10 @@
 /* vim: set ts=4 nu ai: */
-#include "riscvISA.h"
-#include "registers.h"
-#include "core.h"
+#include <isa/riscvISA.h>
+#include <registers.h>
+#include <core.h>
 #if defined(__SIMULATOR__) || defined(__DEBUG__)
-	#include "debug.h"
-	#include "syscall.h"
+	#include <debug.h>
+	#include <syscall.h>
 	#define print_simulator_output(...) PrintDebugStatements(__VA_ARGS__)
 	#define EX_SYS_CALL() case RISCV_SYSTEM: \
 				extoMem->result = solveSysCall(dctoEx.dataa, dctoEx.datab, dctoEx.datac, dctoEx.datad, dctoEx.datae, &extoMem->sys_status); \
@@ -38,14 +38,14 @@
 	#define nl()
 #endif
 
-#ifdef __VIVADO__
+#ifdef __VIVADO
 	#include "DataMemory.h"
 	#define DO_MEM_PARAMETER DataMemory* data_memory
 	#define MEM_SET(memory,address,value,op) memory->set(address,value,op)
 	#define MEM_GET(memory,address,op,sign) memory->get(address,op,sign)
 #endif
 
-#ifdef __CATAPULT__
+#ifdef __CATAPULT
 	#define DO_MEM_PARAMETER CORE_INT(32) data_memory[8192]
 	#define MEM_SET(memory,address,value,op) memorySet(memory,address,value,op)
 	#define MEM_GET(memory,address,op,sign) memoryGet(memory,address,op,sign)

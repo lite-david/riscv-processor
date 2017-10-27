@@ -1,4 +1,6 @@
-#include "elfFile.h"
+// vim: set ts=4 nu ai:
+#ifndef __SIMULATOR__
+#include <lib/elfFile.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -8,8 +10,8 @@
 #include <map>
 #include <iostream>
 #include <string.h>
-#include "core.h"
-#include "portability.h"
+#include <core.h>
+#include <portability.h>
 #include "mc_scverify.h"
 
 #ifdef __VIVADO__
@@ -160,3 +162,4 @@ CCS_MAIN(int argv, char **argc){
     free(debug_out);
 	CCS_RETURN(0);
 }
+#endif

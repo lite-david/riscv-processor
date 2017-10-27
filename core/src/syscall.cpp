@@ -1,4 +1,4 @@
-#include "riscvISA.h"
+#include <isa/riscvISA.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -8,7 +8,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <map>
-#include "portability.h"
+#include <portability.h>
 
 std::map<CORE_INT(16), FILE*> fileMap;
 FILE **inStreams, **outStreams;
