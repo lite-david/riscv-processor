@@ -1,8 +1,9 @@
 all:
+	make -C ./common
 	make catapult -C ./core
 	make -C ./simulator
 	make -C ./benchmarks
-	make -C ./common
+	
 clean:
 	make clean -C ./core
 	make clean -C ./simulator
