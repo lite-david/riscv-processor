@@ -6,11 +6,12 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <stdio.h>
-#include <map>
 #include <iostream>
 #include <string.h>
 #include <core.h>
 #include <portability.h>
+#include <vector>
+#include <dram.h>
 //#include "sds_lib.h"
 
 #ifdef __VIVADO__
@@ -23,43 +24,31 @@ class Simulator{
 
 	private:
 		//counters
-		map<CORE_UINT(32), CORE_UINT(8) > ins_memorymap;
-		map<CORE_UINT(32), CORE_UINT(8) > data_memorymap;
+		Dram dram;
 		CORE_UINT(32) nbcycle;
 		CORE_UINT(32) ins_addr;
-
 		CORE_UINT(32) pc;
 
 	public:
-		CORE_INT(32)* ins_memory;
-		CORE_INT(32)* data_memory;
+		CORE_INT(32)* icache;
+		CORE_INT(32)* dcache;
 
 		Simulator(){
-			ins_memory = (CORE_INT(32) *)malloc(8192 * sizeof(CORE_INT(32)));
-			data_memory = (CORE_INT(32) *)malloc(8192 * sizeof(CORE_INT(32)));
-			for(int i =0;i<8192;i++){
-				ins_memory[i]=0;
-				data_memory[i]=0;
+			icache = (CORE_INT(32) *)malloc(256 * sizeof(CORE_INT(32)));
+			dcache = (CORE_INT(32) *)malloc(256 * sizeof(CORE_INT(32)));
+			for(int i =0;i<256;i++){
+				icache[i]=0;
+				dcache[i]=0;
 			}
 		}
 
 		~Simulator(){
-			free(ins_memory);
-			free(data_memory);
+			free(icache);
+			free(dcache);
 		}
 
 		void fillMemory(){
 			//Check whether data memory and instruction memory from program will actually fit in processor.
-			//cout << ins_memorymap.size()<<endl;
-
-			if(ins_memorymap.size() / 4 > 8192){
-				printf("Error! Instruction memory size exceeded");
-				exit(-1);
-			}
-			if(data_memorymap.size() / 4 > 8192){
-				printf("Error! Data memory size exceeded");
-				exit(-1);
-			}
 
 			//fill instruction memory
 			for(map<CORE_UINT(32), CORE_UINT(8) >::iterator it = ins_memorymap.begin(); it!=ins_memorymap.end(); ++it){
@@ -73,24 +62,27 @@ class Simulator{
 			}
 		}
 
-		void setInstructionMemory(CORE_UINT(32) addr, CORE_INT(8) value){
-			ins_memorymap[addr] = value;
-		}
-
-		void setDataMemory(CORE_UINT(32) addr, CORE_INT(8) value){
-			if((addr % 8192 )/4 == 0){
-				//cout << addr << " " << value << endl;
+		void setInstructionMemory(CORE_UINT(32) addr, int byte, CORE_INT(8) value){
+			if(ins_memorymap[addr].size() == 0){
+				ins_memorymap[addr] = vector<int>(4);
 			}
-			data_memorymap[addr] = value;
+			ins_memorymap[addr][byte] = value;
 		}
 
-		CORE_INT(32)* getInstructionMemory(){
-			return ins_memory;
+		void setDataMemory(CORE_UINT(32) addr, int byte, CORE_INT(8) value){
+			if(data_memorymap[addr].size() == 0){
+		   		data_memorymap[addr] = vector<int>(4);
+			}
+			data_memorymap[addr][byte] = value;
+		}
+
+		CORE_INT(32)* getICache(){
+			return icache;
 		}
 
 
-		CORE_INT(32)* getDataMemory(){
-			return data_memory;
+		CORE_INT(32)* getDCache(){
+			return dcache;
 		}
 
 		void setPC(CORE_UINT(32) pc){
@@ -116,14 +108,14 @@ int main(){
             unsigned char* sectionContent = oneSection->getSectionCode();
             for (unsigned int byteNumber = 0;byteNumber<oneSection->size; byteNumber++){
             	counter++;
-                sim.setDataMemory(oneSection->address + byteNumber, sectionContent[byteNumber]);
+                sim.setDataMemory(oneSection->address, byteNumber, sectionContent[byteNumber]);
             }
         }
 
         if (!oneSection->getName().compare(".text")){
         	unsigned char* sectionContent = oneSection->getSectionCode();
             for (unsigned int byteNumber = 0;byteNumber<oneSection->size; byteNumber++){
-                sim.setInstructionMemory((oneSection->address + byteNumber) & 0x0FFFF, sectionContent[byteNumber]);
+                sim.setInstructionMemory(oneSection->address, byteNumber, sectionContent[byteNumber]);
             }
     	}
     }
@@ -141,10 +133,7 @@ int main(){
     sim.fillMemory();
 //    CORE_INT(32)* dm_in;
 //    dm_in = sim.getDataMemory();
-    CORE_INT(32)* dm_out;
-    CORE_INT(32)* debug_out;
     dm_out = (CORE_INT(32) *)malloc(8192 * sizeof(CORE_INT(32)));
-    debug_out = (CORE_INT(32) *)malloc(200 * sizeof(CORE_INT(32)));
     int ins;
     std::cin >> ins;
     doStep(sim.getPC(),ins,sim.getInstructionMemory(),sim.getDataMemory(),dm_out);
@@ -158,6 +147,5 @@ int main(){
     //    	std::cout << std::dec << dm_out[i] << std::endl;
     // }
     free(dm_out);
-    free(debug_out);
 	return 0;
 }
