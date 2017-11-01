@@ -1,6 +1,7 @@
 // vim: set ts=4 nu ai:
 #include <cache.h>
 #include <assert.h>
+#include <iostream>
 
 Cache::Cache(Dram* dram){
 	assert(SETBITS + TAGBITS + 2 == 32);
@@ -59,18 +60,18 @@ CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) si
 	// For load byte, op = 0
 	// For load half word, op = 1
 	// For load word, op = 3
-	CORE_UINT(SETBITS) i;	
+	CORE_UINT(SETBITS+1) i;	
 	CORE_UINT(TAGBITS) tag = getTag(address);
 	CORE_UINT(SETBITS) set = getSet(address);
 	CORE_UINT(2) offset = getOffset(address);
 	CORE_UINT(1) tag_match = (tag == index[set].tag) ? 1 : 0;
+	CORE_UINT(1) set_match = (set == index[set].set) ? 1 : 0;
 	CORE_UINT(1) dirty = index[set].dirtybit;
 	CORE_INT(32) result;
 	result = sign ? -1 : 0;
 	CORE_UINT(32) dram_address = 0;
 	CORE_UINT(8) byte0, byte1, byte2, byte3;
-
-	if(tag_match == 1){
+	if(tag_match & set_match == 1){
 		byte0 = cache[set][0];
 		byte1 = cache[set][1];
 		byte2 = cache[set][2];
@@ -98,7 +99,7 @@ CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) si
 				cache[i][1] = dram_location->getMemory(dram_address,1);
 				cache[i][2] = dram_location->getMemory(dram_address,2);
 				cache[i][3] = dram_location->getMemory(dram_address,3);
-				dram_address+=4;
+				dram_address+=1;
 		}
 
 		byte0 = cache[set][0];
@@ -133,11 +134,11 @@ CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) si
 
 
 CORE_UINT(TAGBITS) Cache::getTag(CORE_UINT(32) address){
-	return address.SLC(TAGBITS,3);
+	return address.SLC(TAGBITS,2+SETBITS);
 }	
 
 CORE_UINT(SETBITS) Cache::getSet(CORE_UINT(32) address){
-	return address.SLC(SETBITS,2+SETBITS);
+	return address.SLC(SETBITS,2);
 }
 
 CORE_UINT(2) Cache::getOffset(CORE_UINT(32) address){
