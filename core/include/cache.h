@@ -23,6 +23,13 @@ class Cache{
 		CORE_UINT(8) cache[SETS][4];
 		Dram* dram_location;
 
+		//data structures to collect statistics
+		CORE_UINT(32) n_cache_miss;
+		CORE_UINT(32) n_load;
+		CORE_UINT(32) n_store;
+		CORE_UINT(32) n_dram_writes;
+		CORE_UINT(32) n_dram_reads;
+
 	public:
 		//Instantiate cache with pointer to DRAM object
 		Cache(Dram* dram);
@@ -36,6 +43,12 @@ class Cache{
 		CORE_UINT(SETBITS) getSet(CORE_UINT(32) address);
 
 		CORE_UINT(2) getOffset(CORE_UINT(32) address);
+
+		CORE_UINT(32) getNumberCacheMiss();
+		CORE_UINT(32) getNumberDramReads();
+		CORE_UINT(32) getNumberLoads();
+		CORE_UINT(32) getNumberStores();
+		CORE_UINT(32) getNumberDramWrites();
 
 };
 
