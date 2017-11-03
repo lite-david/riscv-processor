@@ -25,11 +25,11 @@ public:
 
 	int indexOfSymbolNameSection;
 
-	ElfFile(char* pathToElfFile);
-	ElfFile* copy(char* newDest);
+	ElfFile(const char* pathToElfFile);
+	ElfFile* copy( char* newDest);
 
 	FILE* elfFile;
-	char* pathToElfFile;
+	const char* pathToElfFile;
 
 };
 
