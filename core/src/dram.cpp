@@ -22,9 +22,10 @@ void Dram::setMemory(CORE_UINT(32) address, CORE_UINT(8) value, CORE_UINT(2) byt
 
 CORE_UINT(8) Dram::getMemory(CORE_UINT(32) address, CORE_UINT(2) byte){
 	if(memory[address].size() == 0){
-		std::cout << "Error! Invalid address access in Dram. Terminating" 
-		<< std::endl;
-		exit(-1);
+		//std::cout << "Error! Invalid address access in Dram. Terminating" 
+		//<< std::endl;
+		//exit(-1);
+		return 0;
 	}
 	return memory[address][byte];
 }
