@@ -1,5 +1,5 @@
 objects = matmul4_4.o matmul8_8.o matmul16_16.o matmul32_32.o
-executables = $(OUT_DIR)/matmul4_4.out $(OUT_DIR)/matmul8_8.out $(OUT_DIR)/matmul16_16.out $(OUT_DIR)/matmul32_32.out $(OUT_DIR)/qsort_10.out $(OUT_DIR)/qsort_50.out $(OUT_DIR)/qsort_100.out $(OUT_DIR)/qsort_1000.out
+executables = $(OUT_DIR)/matmul4_4.out $(OUT_DIR)/matmul8_8.out $(OUT_DIR)/matmul16_16.out $(OUT_DIR)/qsort_10.out $(OUT_DIR)/qsort_50.out $(OUT_DIR)/qsort_100.out 
 dependancies = src/matmul.c include/matmul.h src/qsort.c include/qsort.h
 CCX = riscv32-unknown-elf-gcc
 INCLUDE = ./include

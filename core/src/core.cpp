@@ -54,77 +54,6 @@
 CORE_INT(32) REG[32]; // Register file
 CORE_UINT(2) sys_status;
 
-void memorySet(CORE_INT(32) memory[8192], CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op){
-	CORE_UINT(13) wrapped_address = address % 8192;
-	CORE_INT(32) byte0 = value.SLC(8,0);
-	CORE_INT(32) byte1 = value.SLC(8,8);
-	CORE_INT(32) byte2 = value.SLC(8,16);
-	CORE_INT(32) byte3 = value.SLC(8,24);
-	CORE_UINT(2) offset = wrapped_address & 0x3;
-	CORE_UINT(13) location = wrapped_address >> 2;
-	if(location == 0)
-		print_debug("mem set ",value," ",address);
-	/*this wont synthesize in catapult */
-	//first read existing value
-	CORE_INT(32) memory_val = memory[location];
-	CORE_INT(32) shifted_byte;
-	CORE_INT(32) mask[4];
-	mask[0] = 0xFFFFFF00;
-	mask[1] = 0xFFFF00FF;
-	mask[2] = 0xFF00FFFF;
-	mask[3] = 0x00FFFFFF;
-	CORE_INT(32) val_to_be_written;
-	val_to_be_written = (memory_val & mask[offset]) | (byte0 << (offset*8));
-	if(op & 1){
-		val_to_be_written = (val_to_be_written & mask[offset+1]) | (byte1 << ((offset+1)*8));
-	}
-	if(op & 2){
-		val_to_be_written = value;
-	}
-	memory[location] = val_to_be_written;
-	/*this will synthesize in catapult */
-	//memory[location] = value;
-}
-
-CORE_INT(32) memoryGet(CORE_INT(32) memory[8192], CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) sign){
-	CORE_UINT(13) wrapped_address = address % 8192;
-	CORE_UINT(2) offset = wrapped_address & 0x3;
-	CORE_UINT(13) location = wrapped_address >> 2;
-	CORE_INT(32) result;
-	result = sign ? -1 : 0;
-	CORE_INT(32) mem_read = memory[location];
-	CORE_INT(8) byte0 = mem_read.SLC(8,0);
-	CORE_INT(8) byte1 = mem_read.SLC(8,8);
-	CORE_INT(8) byte2 = mem_read.SLC(8,16);
-	CORE_INT(8) byte3 = mem_read.SLC(8,24);
-
-	if(location == 0){
-		print_debug("mem get ",mem_read, " ",address);
-	}
-	switch(offset){
-		case 0:
-			break;
-		case 1:
-			byte0 = byte1;
-			break;
-		case 2:
-			byte0 = byte1;
-			byte1 = byte3;
-			break;
-		case 3:
-			byte0 = byte3;
-			break;
-	}
-	result.SET_SLC(0,byte0);
-	if(op & 1){
-		result.SET_SLC(8,byte1);
-	}
-	if(op & 2){
-		result.SET_SLC(16,byte2);
-		result.SET_SLC(24,byte3);
-	}
-	return result;
-}
 
 CORE_INT(32) reg_controller(CORE_UINT(32) address, CORE_UINT(1) op, CORE_INT(32) val){
 	CORE_INT(32) return_val = 0;
@@ -139,7 +68,8 @@ CORE_INT(32) reg_controller(CORE_UINT(32) address, CORE_UINT(1) op, CORE_INT(32)
 	return return_val;
 }
 
-void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem, CORE_INT(32) ins_memory[8192], struct FtoDC *ftoDC, CORE_UINT(3) mem_lock){
+void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
+	Cache* ICache, struct FtoDC *ftoDC, CORE_UINT(3) mem_lock){
 
 	CORE_UINT(32) next_pc;
 	if(freeze_fetch){
@@ -171,7 +101,8 @@ void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem, CO
 			break;
 	}
 	if(!freeze_fetch){
-		(ftoDC->instruction).SET_SLC(0, ins_memory[(*pc & 0x0FFFF)/4]);
+		//(ftoDC->instruction).SET_SLC(0, ins_memory[(*pc & 0x0FFFF)/4]);
+		(ftoDC->instruction).SET_SLC(0, ICache->load(*pc,3,0));
 		ftoDC->pc=*pc;
 		//debugger->set(debugger_index,ftoDC->pc,15);
 	}
@@ -473,7 +404,7 @@ void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, 
 		*ex_bubble = 0;
 }
 
-void do_Mem(DO_MEM_PARAMETER, struct ExtoMem extoMem,
+void do_Mem(Cache* DCache, struct ExtoMem extoMem,
  struct MemtoWB *memtoWB, CORE_UINT(3) *mem_lock, CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble){
 
 	if(*mem_bubble){
@@ -539,7 +470,7 @@ void do_Mem(DO_MEM_PARAMETER, struct ExtoMem extoMem,
 							sign = 0;
 							break;
 		           		 }
-						memtoWB->result = MEM_GET(data_memory,memtoWB->result,ld_op,sign);
+						memtoWB->result = DCache->load(memtoWB->result,ld_op,sign);
 		           		break;
 				case RISCV_ST:
 			   		switch(extoMem.funct3){
@@ -553,7 +484,8 @@ void do_Mem(DO_MEM_PARAMETER, struct ExtoMem extoMem,
                         	st_op = 0;
                         	break;
                     }
-					MEM_SET(data_memory,memtoWB->result,extoMem.datac,st_op);
+					DCache->store(memtoWB->result,extoMem.datac,st_op);
+					//MEM_SET(data_memory,memtoWB->result,extoMem.datac,st_op);
 					//data_memory[(memtoWB->result/4)%8192] = extoMem.datac;
 			   		break;
 			}
@@ -568,12 +500,12 @@ void doWB(struct MemtoWB *memtoWB, CORE_UINT(1) *wb_bubble, CORE_UINT(1) *early_
 		}
 		WB_SYS_CALL()
 }
-#pragma SDS data zero_copy(dm[0:8192])
-void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, CORE_INT(32) ins_memory[8192],
-	CORE_INT(32) dm[8192], CORE_INT(32) dm_out[8192]){//, CORE_INT(32) debug_arr[200]){
+
+void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
+	Cache* DCache, CORE_INT(32) dm_out[8192]){//, CORE_INT(32) debug_arr[200]){
 
 	int i;
-
+	
 	#ifdef __VIVADO__
 	DataMemory data_memory;
     for(i = 0;i<8192;i++){
@@ -631,17 +563,17 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, CORE_INT(32) ins_memory[819
 	doStep_label1:while(n_inst < nbcycle){
 		#pragma HLS PIPELINE II=1
 		#ifdef __DEBUG__
-  			print_debug(n_inst, ";", std::hex, (int)pc, ";",	(int)ins_memory[(pc & 0x0FFFF)/4]," ");
+  			print_debug(n_inst, ";", std::hex, (int)pc, ";",	(int)ICache->load(pc,3,0)," ");
 		#endif
    	    doWB(&memtoWB, &wb_bubble, &early_exit);
 		#ifdef __VIVADO__
 			do_Mem(&data_memory, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble);
 		#else
-   			do_Mem(dm, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble);
+   			do_Mem(DCache, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble);
 		#endif
  		Ex(dctoEx, &extoMem, &ex_bubble, &mem_bubble, &sys_status);
 		DC(ftoDC, extoMem, memtoWB, &dctoEx, &prev_opCode, &prev_pc, mem_lock, &freeze_fetch, &ex_bubble);
-		Ft(&pc,freeze_fetch, extoMem, ins_memory, &ftoDC, mem_lock);
+		Ft(&pc,freeze_fetch, extoMem, ICache, &ftoDC, mem_lock);
 		n_inst++;
 		#ifdef __DEBUG__
 		for(i=0;i<32;i++){
