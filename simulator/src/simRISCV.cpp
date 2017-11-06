@@ -27,7 +27,7 @@ int main(int argc, char* argv[]){
 	int HELP = 0;
 	char* binaryFile = NULL;
 	char* ARGUMENTS = NULL;
-	fprintf(stderr,"%s\n", argv[3]);
+	//fprintf(stderr,"%s\n", argv[3]);
 	FILE** inStreams = (FILE**) malloc(10*sizeof(FILE*));
 	FILE** outStreams = (FILE**) malloc(10*sizeof(FILE*));
 
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]){
 		abort ();
 	  }
 
-	fprintf(stderr,"%s\n", ARGUMENTS);
+	//fprintf(stderr,"%s\n", ARGUMENTS);
 
 
 	int localArgc;
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]){
 		localArgc = count + 1;
 	}
 
-	fprintf(stderr,"There is %d arguments passed to simulator\n", localArgc);
+	//fprintf(stderr,"There is %d arguments passed to simulator\n", localArgc);
 
 	if (HELP || binaryFile == NULL){
 		fprintf(stderr,"Usage is %s [-v] file\n\t-v\tVerbose mode, prints all execution information\n", argv[0]);
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]){
 
 	//******************************************************************************************
 	//Opening elf files
-	fprintf(stderr, "Binary file is %s\n", binaryFile);
+	//fprintf(stderr, "Binary file is %s\n", binaryFile);
 	ElfFile elfFile(binaryFile);
 	RiscvSimulator* simulator = new RiscvSimulator();
 	simulator->initialize(localArgc, localArgv);
@@ -164,12 +164,12 @@ int main(int argc, char* argv[]){
 		const char* name = (const char*) &(elfFile.sectionTable->at(elfFile.indexOfSymbolNameSection)->getSectionCode()[symbol->name]);
 
 		if (strcmp(name, "_start") == 0){
-			fprintf(stderr, "%s\n", name);
+			//fprintf(stderr, "%s\n", name);
 			simulator->pc = symbol->offset;
 
 		}
 	}
-	fprintf(stderr, "PC start is %x\n", simulator->pc);
+	//fprintf(stderr, "PC start is %x\n", simulator->pc);
 
 	simulator->doSimulation(50000000);
 

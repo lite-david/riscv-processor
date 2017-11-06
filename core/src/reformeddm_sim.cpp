@@ -104,9 +104,9 @@ int main(){
     CORE_INT(32)* dm_out = (CORE_INT(32) *)malloc(8192 * sizeof(CORE_INT(32)));
     int ins;
     cin >> ins;
-	cout << "pc start is: " << (int)sim.getPC() << endl;
+	//cout << "pc start is: " << (int)sim.getPC() << endl;
 	CORE_UINT(1) dummy_signal;
-	cout << (int) sim.getICache()->load(sim.getPC(),3,0,&dummy_signal) << endl;
+	//cout << (int) sim.getICache()->load(sim.getPC(),3,0,&dummy_signal) << endl;
     doStep(sim.getPC(),ins,sim.getICache(),sim.getDCache(),dm_out);
     /*for(int i = 0;i<34;i++){ 
     	std::cout << std::dec << i << " : ";
