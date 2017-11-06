@@ -93,7 +93,7 @@ class Simulator{
 
 int main(){
 	const char* binaryFile = "benchmarks/build/matmul4_4.out";
-	cout << showbase << hex;
+	cout  << hex;
 	Simulator sim(binaryFile);
 	sim.loadElfIntoDram();
 	sim.setPC();
@@ -105,7 +105,8 @@ int main(){
     int ins;
     cin >> ins;
 	cout << "pc start is: " << (int)sim.getPC() << endl;
-	cout << (int) sim.getICache()->load(sim.getPC(),3,0) << endl;
+	CORE_UINT(1) dummy_signal;
+	cout << (int) sim.getICache()->load(sim.getPC(),3,0,&dummy_signal) << endl;
     doStep(sim.getPC(),ins,sim.getICache(),sim.getDCache(),dm_out);
     /*for(int i = 0;i<34;i++){ 
     	std::cout << std::dec << i << " : ";

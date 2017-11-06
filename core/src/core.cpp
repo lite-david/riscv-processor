@@ -44,12 +44,7 @@
 	#define MEM_SET(memory,address,value,op) memory->set(address,value,op)
 	#define MEM_GET(memory,address,op,sign) memory->get(address,op,sign)
 #endif
-
-#ifdef __CATAPULT
-	#define DO_MEM_PARAMETER CORE_INT(32) data_memory[8192]
-	#define MEM_SET(memory,address,value,op) memorySet(memory,address,value,op)
-	#define MEM_GET(memory,address,op,sign) memoryGet(memory,address,op,sign)
-#endif
+	
 
 CORE_INT(32) REG[32]; // Register file
 CORE_UINT(2) sys_status;
@@ -69,10 +64,11 @@ CORE_INT(32) reg_controller(CORE_UINT(32) address, CORE_UINT(1) op, CORE_INT(32)
 }
 
 void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
-	Cache* ICache, struct FtoDC *ftoDC, CORE_UINT(3) mem_lock){
+	Cache* ICache, struct FtoDC *ftoDC, CORE_UINT(3) mem_lock, CORE_UINT(1) cache_miss){
 
 	CORE_UINT(32) next_pc;
-	if(freeze_fetch){
+	CORE_UINT(1) icache_miss;
+	if(freeze_fetch || cache_miss){
 		next_pc =  *pc;
 	}
 	else{
@@ -100,9 +96,9 @@ void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
 			control = 0;
 			break;
 	}
-	if(!freeze_fetch){
+	if(!freeze_fetch && !cache_miss){
 		//(ftoDC->instruction).SET_SLC(0, ins_memory[(*pc & 0x0FFFF)/4]);
-		(ftoDC->instruction).SET_SLC(0, ICache->load(*pc,3,0));
+		(ftoDC->instruction).SET_SLC(0, ICache->load(*pc,3,0,&icache_miss));
 		ftoDC->pc=*pc;
 		//debugger->set(debugger_index,ftoDC->pc,15);
 	}
@@ -111,8 +107,9 @@ void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
 
 
 void DC(struct FtoDC ftoDC, struct ExtoMem extoMem, struct MemtoWB memtoWB, struct DCtoEx *dctoEx, CORE_UINT(7) *prev_opCode,
- CORE_UINT(32) *prev_pc, CORE_UINT(3) mem_lock, CORE_UINT(1) *freeze_fetch, CORE_UINT(1) *ex_bubble){
+ CORE_UINT(32) *prev_pc, CORE_UINT(3) mem_lock, CORE_UINT(1) *freeze_fetch, CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss){
 
+	if(!cache_miss){
 	CORE_UINT(5) rs1 = ftoDC.instruction.SLC(5,15);       // Decoding the instruction, in the DC stage
 	CORE_UINT(5) rs2 = ftoDC.instruction.SLC(5,20);
 	CORE_UINT(5) rd = ftoDC.instruction.SLC(5,7);
@@ -225,12 +222,15 @@ void DC(struct FtoDC ftoDC, struct ExtoMem extoMem, struct MemtoWB memtoWB, stru
 	}
 	*prev_opCode = opcode;
 	*prev_pc = ftoDC.pc;
+	}
 }
 
 
 
-void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, CORE_UINT(1) *mem_bubble, CORE_UINT(2) *sys_status){
+void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, CORE_UINT(1) *mem_bubble,
+	CORE_UINT(2) *sys_status, CORE_UINT(1) cache_miss){
 
+		if(!cache_miss){
 		CORE_UINT(32) unsignedReg1;
 		unsignedReg1.SET_SLC(0,(dctoEx.dataa).SLC(32,0));
 		CORE_UINT(32) unsignedReg2;
@@ -402,11 +402,14 @@ void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, 
 			extoMem->funct3 = 0;
 		}
 		*ex_bubble = 0;
+	}
 }
 
 void do_Mem(Cache* DCache, struct ExtoMem extoMem,
- struct MemtoWB *memtoWB, CORE_UINT(3) *mem_lock, CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble){
-
+ struct MemtoWB *memtoWB, CORE_UINT(3) *mem_lock, CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss){
+	static CORE_UINT(7) cycles;
+	if(*cache_miss == 0){
+	 cycles = 30;
 	if(*mem_bubble){
 		*mem_bubble = 0;
 		//*wb_bubble = 1;
@@ -470,7 +473,7 @@ void do_Mem(Cache* DCache, struct ExtoMem extoMem,
 							sign = 0;
 							break;
 		           		 }
-						memtoWB->result = DCache->load(memtoWB->result,ld_op,sign);
+						memtoWB->result = DCache->load(memtoWB->result,ld_op,sign,cache_miss);
 		           		break;
 				case RISCV_ST:
 			   		switch(extoMem.funct3){
@@ -484,15 +487,24 @@ void do_Mem(Cache* DCache, struct ExtoMem extoMem,
                         	st_op = 0;
                         	break;
                     }
-					DCache->store(memtoWB->result,extoMem.datac,st_op);
+					DCache->store(memtoWB->result,extoMem.datac,st_op,cache_miss);
 					//MEM_SET(data_memory,memtoWB->result,extoMem.datac,st_op);
 					//data_memory[(memtoWB->result/4)%8192] = extoMem.datac;
 			   		break;
 			}
 		}
 	}
+	}
+	else{
+		print_debug("cache miss ");
+		cycles--;
+		memtoWB->WBena = 0;
+		if(cycles == 0){
+			*cache_miss = 0;
+			memtoWB->WBena = extoMem.WBena;
+		}
+	}
 }
-
 
 void doWB(struct MemtoWB *memtoWB, CORE_UINT(1) *wb_bubble, CORE_UINT(1) *early_exit){
 		if (memtoWB->WBena == 1 && memtoWB->dest != 0){
@@ -551,6 +563,8 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 	CORE_UINT(1) ex_bubble = 0;
 	CORE_UINT(1) mem_bubble = 0;
 	CORE_UINT(1) wb_bubble = 0;
+	CORE_UINT(1) cache_miss = 0;
+	CORE_UINT(1) dummy_signal = 0;
 
 	for(i = 0;i<32;i++){
 		#pragma HLS PIPELINE
@@ -562,18 +576,18 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 
 	doStep_label1:while(n_inst < nbcycle){
 		#pragma HLS PIPELINE II=1
-		#ifdef __DEBUG__
-  			print_debug(n_inst, ";", std::hex, (int)pc, ";",	(int)ICache->load(pc,3,0)," ");
-		#endif
    	    doWB(&memtoWB, &wb_bubble, &early_exit);
 		#ifdef __VIVADO__
 			do_Mem(&data_memory, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble);
 		#else
-   			do_Mem(DCache, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble);
+   			do_Mem(DCache, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble,&cache_miss);
 		#endif
- 		Ex(dctoEx, &extoMem, &ex_bubble, &mem_bubble, &sys_status);
-		DC(ftoDC, extoMem, memtoWB, &dctoEx, &prev_opCode, &prev_pc, mem_lock, &freeze_fetch, &ex_bubble);
-		Ft(&pc,freeze_fetch, extoMem, ICache, &ftoDC, mem_lock);
+ 		Ex(dctoEx, &extoMem, &ex_bubble, &mem_bubble, &sys_status,cache_miss);
+		DC(ftoDC, extoMem, memtoWB, &dctoEx, &prev_opCode, &prev_pc, mem_lock, &freeze_fetch, &ex_bubble,cache_miss);
+		Ft(&pc,freeze_fetch, extoMem, ICache, &ftoDC, mem_lock,cache_miss);	
+		#ifdef __DEBUG__
+  			print_debug(n_inst, ";", std::hex, (int)pc, ";",	(int)ICache->load(pc,3,0,&dummy_signal)," ");
+		#endif
 		n_inst++;
 		#ifdef __DEBUG__
 		for(i=0;i<32;i++){
@@ -599,6 +613,20 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 		#pragma HLS PIPELINE
 		debug_arr[i].SET_SLC(0,REG[i]);
 	}*/
+	print_debug("Printing DCache statistics :");
+	print_debug("cache miss: ", DCache->getNumberCacheMiss());
+	nl();
 
+	print_debug("Number of loads: ", DCache->getNumberLoads());
+	nl();
+	
+	print_debug("Number of stores: ", DCache->getNumberStores());
+	nl();
+	
+	print_debug("Number of DRAM reads: ", DCache->getNumberDramReads());
+	nl();
+
+	print_debug("Number of DRAM writes: ", DCache->getNumberDramWrites());
+	nl();
 	print_simulator_output("Successfully executed all instructions in ",n_inst," cycles");
 }

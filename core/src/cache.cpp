@@ -24,7 +24,7 @@ Cache::Cache(Dram* dram){
 	}
 }
 
-void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op){
+void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CORE_UINT(1)* cache_miss){
 	// For store byte, op = 0
 	// For store half word, op = 1
 	// For store word, op = 3
@@ -45,6 +45,7 @@ void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op){
 	CORE_UINT(1) dirty = index[set].dirtybit;
 	if(dirty && tag_match == 0){
 		n_cache_miss++;
+		*cache_miss = 1;
 		n_dram_writes++;
 		dram_location->setMemory(dram_address,cache[set][0],0);
 		dram_location->setMemory(dram_address,cache[set][1],1);
@@ -65,7 +66,7 @@ void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op){
 	index[set].dirtybit = 1;
 }
 
-CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) sign){
+CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) sign, CORE_UINT(1)* cache_miss){
 	// For load byte, op = 0
 	// For load half word, op = 1
 	// For load word, op = 3
@@ -90,6 +91,7 @@ CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) si
 	else{
 		n_dram_reads++;
 		n_cache_miss++;
+		*cache_miss = 1;
 		for(i = 0; i< SETS;i++){
 			if(index[i].dirtybit == 1){
 				n_dram_writes++;
