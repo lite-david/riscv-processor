@@ -4,9 +4,9 @@
 
 #include <portability.h>
 #include <dram.h>
-#define SETS 256
-#define SETBITS 8
-#define TAGBITS 22
+#define SETS 64
+#define SETBITS 6
+#define TAGBITS 24
 #define WAYS 1
 #define LATENCY 30
 

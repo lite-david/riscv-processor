@@ -92,7 +92,7 @@ class Simulator{
 
 
 int main(){
-	const char* binaryFile = "benchmarks/build/matmul4_4.out";
+	const char* binaryFile = "benchmarks/build/multiply.out";
 	cout  << hex;
 	Simulator sim(binaryFile);
 	sim.loadElfIntoDram();
