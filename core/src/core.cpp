@@ -263,7 +263,7 @@ void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, 
 		CORE_INT(33) mul_reg_a;
 		CORE_INT(33) mul_reg_b;
 		CORE_INT(66) longResult;
-		CORE_INT(33) srli_reg;
+		CORE_INT(33) srli_reg = 0;
 		CORE_INT(33) srli_result;                   // Execution of the Instruction in EX stage
 		extoMem->opCode= dctoEx.opCode;
 		extoMem->dest=dctoEx.dest;
@@ -495,7 +495,7 @@ CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss, COR
 							sign = 1;
 							break;
 						case RISCV_LD_LBU:
-							ld_op = 1;
+							ld_op = 0;
 							sign = 0;
 							break;
 		           		 }
@@ -608,7 +608,7 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 		#pragma HLS PIPELINE II=1
 			
 		#ifdef __DEBUG__
-  			print_debug(n_inst, "; ");
+  			print_debug(n_inst, ";");
 		#endif	
 
    	    doWB(&memtoWB, &wb_bubble, &early_exit,icache_miss);

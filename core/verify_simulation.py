@@ -1,5 +1,6 @@
 # vim: set ts=4 nu ai:
 import re, string
+import sys
 
 def get_pc_instruction_registers(line):
 	split_line = line.split(";")
@@ -29,10 +30,10 @@ def compare_registers(reg1, reg2):
 				return -1
 	return 0
 
-with open('benchmarks/debug_output/matmul4_4.out.debug') as f:
+with open(sys.argv[1]) as f:
 	correct_op = f.read().splitlines()
 
-with open('matmul4_4.cairn.debug.out') as f:
+with open(sys.argv[2]) as f:
 	op_to_be_verified = f.read().splitlines()
 
 l_correct_op = len(correct_op)
@@ -60,8 +61,6 @@ for i in xrange(0,l_correct_op):
 		if(ld_dest in temp.split(' ')):
 			flag_2 = 1
 		elif(opcode1 == "JALR"):
-			print "jalr found"
-			print ld_dest
 			hex_ins = int(instruction1,16)
 			the_val = (hex_ins & 0xf8000) >> 15
 			if "r"+str(the_val) == ld_dest:
@@ -72,7 +71,6 @@ for i in xrange(0,l_correct_op):
 
 	if(opcode1 == "LDW" or opcode1 == "LDBU"):
 		ld_dest = correct_op[i].split(';')[2].split(' ')[1]
-		print str(i) + "found LDW"
 		flag_1 = 1		
 
 	pc2, instruction2, opcode2, reg2 = get_pc_instruction_registers(op_to_be_verified[j])

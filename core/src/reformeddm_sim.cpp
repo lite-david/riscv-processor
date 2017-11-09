@@ -91,8 +91,13 @@ class Simulator{
 };
 
 
-int main(){
-	const char* binaryFile = "benchmarks/build/multiply.out";
+int main(int argc, char** argv){
+	const char* binaryFile;
+	if(argc != 2)
+		binaryFile = "benchmarks/build/median.out";
+	else
+		binaryFile = argv[1];
+
 	cout  << hex;
 	Simulator sim(binaryFile);
 	sim.loadElfIntoDram();
@@ -102,8 +107,7 @@ int main(){
 	//sim.printMem();
 
     CORE_INT(32)* dm_out = (CORE_INT(32) *)malloc(8192 * sizeof(CORE_INT(32)));
-    int ins;
-    cin >> ins;
+    int ins = 1000000;
 	//cout << "pc start is: " << (int)sim.getPC() << endl;
 	CORE_UINT(1) dummy_signal;
 	//cout << (int) sim.getICache()->load(sim.getPC(),3,0,&dummy_signal) << endl;

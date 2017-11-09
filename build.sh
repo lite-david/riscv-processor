@@ -7,3 +7,4 @@ cp ./core/verify_simulation.py ./testdir/
 mkdir ./testdir/benchmarks
 cp -r ./benchmarks/build ./testdir/benchmarks/
 cp -r ./benchmarks/simulator_output ./testdir/benchmarks/
+cp ./core/testscript.sh ./testdir/

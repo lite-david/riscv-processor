@@ -1,5 +1,5 @@
 objects = matmul4_4.o matmul8_8.o matmul16_16.o matmul32_32.o 
-executables = $(OUT_DIR)/matmul4_4.out $(OUT_DIR)/matmul8_8.out $(OUT_DIR)/matmul16_16.out $(OUT_DIR)/qsort_10.out $(OUT_DIR)/qsort_50.out $(OUT_DIR)/qsort_100.out $(OUT_DIR)/multiply.out
+executables = $(OUT_DIR)/matmul4_4.out $(OUT_DIR)/matmul8_8.out $(OUT_DIR)/matmul16_16.out $(OUT_DIR)/matmul32_32.out $(OUT_DIR)/qsort_10.out $(OUT_DIR)/qsort_50.out $(OUT_DIR)/qsort_100.out $(OUT_DIR)/multiply.out $(OUT_DIR)/median.out $(OUT_DIR)/qsort.out $(OUT_DIR)/towers.out $(OUT_DIR)/vvadd.out
 dependancies = src/matmul.c include/matmul.h src/qsort.c include/qsort.h src/multiply.c src/multiply_main.c include/multiply.h include/dataset1.h
 CCX = riscv32-unknown-elf-gcc
 INCLUDE = ./include
@@ -35,6 +35,18 @@ $(OUT_DIR)/qsort_1000.out : src/qsort.c include/qsort.h
 $(OUT_DIR)/multiply.out: 
 	$(CCX) $(OPT) -I $(INCLUDE) src/multiply_main.c src/multiply.c -o $(OUT_DIR)/multiply.out 
 	$(SIM) -v -f $(OUT_DIR)/multiply.out &> $(SIM_OUT)/multiply.debug.out
+$(OUT_DIR)/median.out:
+	$(CCX) $(OPT) -I $(INCLUDE) median/median_main.c median/median.c -o $(OUT_DIR)/median.out 
+	$(SIM) -v -f $(OUT_DIR)/median.out &> $(SIM_OUT)/median.debug.out
+$(OUT_DIR)/qsort.out:
+	$(CCX) $(OPT) -I $(INCLUDE) qsort/qsort_main.c -o $(OUT_DIR)/qsort.out 
+	$(SIM) -v -f $(OUT_DIR)/qsort.out &> $(SIM_OUT)/qsort.debug.out
+$(OUT_DIR)/towers.out:
+	$(CCX) $(OPT) -I $(INCLUDE) towers/towers_main.c -o $(OUT_DIR)/towers.out 
+	$(SIM) -v -f $(OUT_DIR)/towers.out &> $(SIM_OUT)/towers.debug.out
+$(OUT_DIR)/vvadd.out:
+	$(CCX) $(OPT) -I $(INCLUDE) vvadd/vvadd_main.c -o $(OUT_DIR)/vvadd.out 
+	$(SIM) -v -f $(OUT_DIR)/vvadd.out &> $(SIM_OUT)/vvadd.debug.out
 directories: ${OUT_DIR}
 ${OUT_DIR}:
 	mkdir -p ${OUT_DIR}
