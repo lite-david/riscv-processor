@@ -40,12 +40,12 @@ void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CO
 
 	CORE_UINT(32) dram_address = 0;
 	dram_address.SET_SLC(0,set);
-	dram_address.SET_SLC(SETBITS,tag);
+	dram_address.SET_SLC(SETBITS,index[set].tag);
 	CORE_UINT(1) tag_match = (tag == index[set].tag) ? 1 : 0;
 	CORE_UINT(1) dirty = index[set].dirtybit;
 	if(dirty && tag_match == 0){
 		n_cache_miss++;
-		*cache_miss = 1;
+		//*cache_miss = 1;
 		n_dram_writes++;
 		dram_location->setMemory(dram_address,cache[set][0],0);
 		dram_location->setMemory(dram_address,cache[set][1],1);
@@ -91,7 +91,7 @@ CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) si
 	else{
 		n_dram_reads++;
 		n_cache_miss++;
-		*cache_miss = 1;
+		//*cache_miss = 1;
 		for(i = 0; i< SETS;i++){
 			if(index[i].dirtybit == 1){
 				n_dram_writes++;
