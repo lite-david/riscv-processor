@@ -620,10 +620,11 @@ void RiscvSimulator::doStep(){
 	}
 	REG[0] = 0;
 	n_inst = n_inst + 1;
-
+	
+	
 	if (storedVerbose>1){
 		for (int i=0; i<32; i++){
-			fprintf(stderr,";%lx", (int64_t) REG[i]);
+			fprintf(stderr,";%lx", (int32_t) REG[i]);
 		}
 		fprintf(stderr, "\n");
 	}
