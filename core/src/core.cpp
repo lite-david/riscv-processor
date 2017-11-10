@@ -132,7 +132,7 @@ void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
 
 void DC(struct FtoDC ftoDC, struct ExtoMem extoMem, struct MemtoWB memtoWB, struct DCtoEx *dctoEx,
 CORE_UINT(7) *prev_opCode,CORE_UINT(32) *prev_pc, CORE_UINT(3) mem_lock, CORE_UINT(1) *freeze_fetch,
-CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss){
+CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE_UINT(32) n_inst, CORE_UINT(32)* counter_reg){
 
 	if(!cache_miss && !icache_miss){
 	CORE_UINT(5) rs1 = ftoDC.instruction.SLC(5,15);       // Decoding the instruction, in the DC stage
@@ -224,6 +224,9 @@ CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss){
 			dctoEx->rs2=rs2;
 			datab_fwd = 1;
         	dctoEx->dest=rd;
+			break;
+		case RISCV_OP_CUST0:
+			*counter_reg = n_inst - *counter_reg;
 			break;
 		DC_SYS_CALL()
 	}
@@ -410,6 +413,8 @@ void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, 
 					}
 				}
 			break;
+			case RISCV_OP_CUST0:
+				break;
 			EX_SYS_CALL()
 		}
 		
@@ -516,7 +521,10 @@ CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss, COR
 					DCache->store(memtoWB->result,extoMem.datac,st_op,cache_miss);
 					//MEM_SET(data_memory,memtoWB->result,extoMem.datac,st_op);
 					//data_memory[(memtoWB->result/4)%8192] = extoMem.datac;
-			   		break;
+			   	break;
+				case RISCV_OP_CUST0:
+					memtoWB->WBena = 0;	
+				break;
 			}
 		}
 	}
@@ -564,6 +572,7 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 	struct FtoDC ftoDC;
 
 	CORE_UINT(32) n_inst=0;
+	CORE_UINT(32) counter_reg=0;
 	CORE_UINT(7) prev_opCode=0;
 	CORE_UINT(32) prev_pc = 0;
 
@@ -618,7 +627,7 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
    			do_Mem(DCache, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble,&cache_miss,icache_miss);
 		#endif
  		Ex(dctoEx, &extoMem, &ex_bubble, &mem_bubble, &sys_status,cache_miss,icache_miss);
-		DC(ftoDC, extoMem, memtoWB, &dctoEx, &prev_opCode, &prev_pc, mem_lock, &freeze_fetch, &ex_bubble,cache_miss,icache_miss);
+		DC(ftoDC, extoMem, memtoWB, &dctoEx, &prev_opCode, &prev_pc, mem_lock, &freeze_fetch, &ex_bubble,cache_miss,icache_miss,n_inst,&counter_reg);
 		Ft(&pc,freeze_fetch, extoMem, ICache, &ftoDC, mem_lock,cache_miss, &icache_miss);	
 		#ifdef __DEBUG__
   			print_debug(std::hex, (int)ftoDC.pc, ";",	(int)ftoDC.instruction," ");
@@ -671,4 +680,6 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 	print_debug("cache miss: ",ICache->getNumberCacheMiss());
 	nl();
 	print_simulator_output("Successfully executed all instructions in ",n_inst," cycles");
+	nl();
+	print_simulator_output("cycle counter value: ",counter_reg);
 }

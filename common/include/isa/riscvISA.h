@@ -93,7 +93,7 @@
 
 #define RISCV_OPW_SRW_SRLW 0x0
 #define RISCV_OPW_SRW_SRAW 0x20
-
+#define RISCV_OP_CUST0 0xb
 
 
 #define RISCV_SYSTEM_ENV 0x0
