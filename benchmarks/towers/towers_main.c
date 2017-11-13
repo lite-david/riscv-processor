@@ -18,7 +18,7 @@
 // This is the number of discs in the puzzle.
 
 #define NUM_DISCS  7
-
+#include "custom_inst.h"
 //--------------------------------------------------------------------------
 // List data structure and functions
 
@@ -222,10 +222,9 @@ void main()
   // Solve it
 
   towers_clear( &towers );
- // setStats(1);
-  towers_solve( &towers );
-  //setStats(0);
 
-  // Check the results
+  CUSTOMX_R_R_R(0,i,0,0,0) 
+  towers_solve( &towers );
+  CUSTOMX_R_R_R(0,i,0,0,0) 
 }
 

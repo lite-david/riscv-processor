@@ -14,7 +14,8 @@
 // Input/Reference Data
 
 #include "dataset1.h"
-
+#include "custom_inst.h"
+#include "util.h"
 //--------------------------------------------------------------------------
 // vvadd function
 
@@ -28,10 +29,16 @@ void vvadd( int n, int a[], int b[], int c[] )
 //--------------------------------------------------------------------------
 // Main
 
-void main()
+int main()
 {
   int results_data[DATA_SIZE];
 
   // Do the vvadd
+  int i;
+  CUSTOMX_R_R_R(0,i,0,0,0);
   vvadd( DATA_SIZE, input1_data, input2_data, results_data );
+  CUSTOMX_R_R_R(0,i,0,0,0);
+ 
+  //verify
+  return verify(DATA_SIZE,results_data,verify_data);	
 }

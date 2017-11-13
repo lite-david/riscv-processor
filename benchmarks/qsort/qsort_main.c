@@ -29,7 +29,8 @@
 
 #define type int
 #include "dataset1.h"
-
+#include "custom_inst.h"
+#include "util.h"
 // Swap macro for swapping two values.
 
 #define SWAP(a,b) do { typeof(a) temp=(a);(a)=(b);(b)=temp; } while (0)
@@ -133,7 +134,7 @@ void sort(size_t n, type arr[])
 //--------------------------------------------------------------------------
 // Main
 
-void main()
+int main()
 {
 #if PREALLOCATE
   // If needed we preallocate everything in the caches
@@ -143,6 +144,9 @@ void main()
 #endif
 
   // Do the sort
+  int j;
+  CUSTOMX_R_R_R(0,j,0,0,0)
   sort( DATA_SIZE, input_data );
-
+  CUSTOMX_R_R_R(0,j,0,0,0)
+  return verify(DATA_SIZE,input_data,verify_data);
 }
