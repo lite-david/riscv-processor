@@ -27,6 +27,7 @@ int RiscvSimulator::doSimulation(int nbkCycle){
 	//We initialize shiftmask
 	ac_int<64, false> value = 0xffffffff;
 	value = (value << 32) + value;
+	function_counter = 0;
 	for (int i=0; i<64; i++){
 		shiftMask[i] = value;
 		value = value >> 1;
@@ -40,8 +41,10 @@ int RiscvSimulator::doSimulation(int nbkCycle){
 	}
 	while (stop != 1 && n_inst<nbkCycle*1000);
 
-	if (this->stop)
+	if (this->stop){
 		fprintf(stderr,"Simulation finished in %d cycles\n",n_inst);
+		printf("Function call cycles: %d \n",function_counter);
+	}
 
 	return 0;
 
@@ -611,7 +614,10 @@ void RiscvSimulator::doStep(){
 
 
 		break;
-
+	case RISCV_OP_CUST0:
+		function_counter = n_inst - function_counter;	
+		break;
+	
 	default:
 		printf("In default part of switch opcode, instr %x is not handled yet(%x)\n", (int) ins, this->heapAddress);
 		exit(-1);

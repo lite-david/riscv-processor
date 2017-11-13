@@ -183,6 +183,9 @@ std::string printDecodedInstrRISCV(uint32 ins){
 	case RISCV_SYSTEM:
 		stream << "SYSTEM";
 	break;
+	case RISCV_OP_CUST0:
+		stream << "CUST0";	
+	break;
 	default:
 		fprintf(stderr,"In default part of switch opcode, instr %x is not handled yet", (int) ins);
 	break;
