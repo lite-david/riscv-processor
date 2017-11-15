@@ -132,7 +132,7 @@ void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
 
 void DC(struct FtoDC ftoDC, struct ExtoMem extoMem, struct MemtoWB memtoWB, struct DCtoEx *dctoEx,
 CORE_UINT(7) *prev_opCode,CORE_UINT(32) *prev_pc, CORE_UINT(3) mem_lock, CORE_UINT(1) *freeze_fetch,
-CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE_UINT(32) n_inst, CORE_UINT(32)* counter_reg){
+CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE_UINT(32) n_inst, CORE_UINT(32)* counter_reg,CORE_UINT(1)* in_function_call){
 
 	if(!cache_miss && !icache_miss){
 	CORE_UINT(5) rs1 = ftoDC.instruction.SLC(5,15);       // Decoding the instruction, in the DC stage
@@ -227,6 +227,7 @@ CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE
 			break;
 		case RISCV_OP_CUST0:
 			*counter_reg = n_inst - *counter_reg;
+			*in_function_call = 1-*in_function_call;
 			break;
 		DC_SYS_CALL()
 	}
@@ -256,7 +257,8 @@ CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE
 
 
 void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, CORE_UINT(1) *mem_bubble,
-	CORE_UINT(2) *sys_status, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss){
+	CORE_UINT(2) *sys_status, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE_UINT(32)* branch_counter, CORE_UINT(32)* jump_counter,
+	CORE_UINT(1) in_function_call){
 
 		if(!cache_miss && !icache_miss){
 		CORE_UINT(32) unsignedReg1;
@@ -291,10 +293,14 @@ void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, 
 			case RISCV_JAL:
 		        extoMem->result = dctoEx.pc + 4;
 				extoMem->memValue = dctoEx.pc + dctoEx.datab;
+				if(in_function_call)
+					*jump_counter = *jump_counter + 1;
 				break;
 			case RISCV_JALR:
 		        extoMem->result = dctoEx.pc + 4;
 				extoMem->memValue = (dctoEx.dataa + dctoEx.datab) & 0xfffffffe;
+				if(in_function_call)
+					*jump_counter = *jump_counter + 1;
 				break;
 			case RISCV_BR: // Switch case for branch instructions
 				switch(dctoEx.funct3){
@@ -316,6 +322,9 @@ void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, 
 					case RISCV_BR_BGEU:
 					    extoMem->result = (unsignedReg1 >= unsignedReg2);
 						break;
+				}
+				if(extoMem->result == 1 && in_function_call == 1){
+						*branch_counter = *branch_counter + 1;
 				}
 				extoMem->memValue = dctoEx.pc + dctoEx.datac;
 				break;
@@ -440,7 +449,7 @@ CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss, COR
 	static CORE_UINT(7) cycles;
 	if(!icache_miss){
 	if(*cache_miss == 0){
-	 cycles = 30;
+	 cycles = 29;
 	if(*mem_bubble){
 		*mem_bubble = 0;
 		//*wb_bubble = 1;
@@ -575,7 +584,9 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 	CORE_UINT(32) counter_reg=0;
 	CORE_UINT(7) prev_opCode=0;
 	CORE_UINT(32) prev_pc = 0;
-
+	CORE_UINT(1) in_function_call = 0;
+	CORE_UINT(32) branch_counter = 0;
+	CORE_UINT(32) jump_counter = 0;
 	#ifdef __DEBUG__
 	CORE_UINT(32) debug_pc = 0;
 	int reg_print_halt = 0;
@@ -626,8 +637,8 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 		#else
    			do_Mem(DCache, extoMem, &memtoWB, &mem_lock, &mem_bubble, &wb_bubble,&cache_miss,icache_miss);
 		#endif
- 		Ex(dctoEx, &extoMem, &ex_bubble, &mem_bubble, &sys_status,cache_miss,icache_miss);
-		DC(ftoDC, extoMem, memtoWB, &dctoEx, &prev_opCode, &prev_pc, mem_lock, &freeze_fetch, &ex_bubble,cache_miss,icache_miss,n_inst,&counter_reg);
+ 		Ex(dctoEx, &extoMem, &ex_bubble, &mem_bubble, &sys_status,cache_miss,icache_miss,&branch_counter,&jump_counter,in_function_call);
+		DC(ftoDC, extoMem, memtoWB, &dctoEx, &prev_opCode, &prev_pc, mem_lock, &freeze_fetch, &ex_bubble,cache_miss,icache_miss,n_inst,&counter_reg,&in_function_call);
 		Ft(&pc,freeze_fetch, extoMem, ICache, &ftoDC, mem_lock,cache_miss, &icache_miss);	
 		#ifdef __DEBUG__
   			print_debug(std::hex, (int)ftoDC.pc, ";",	(int)ftoDC.instruction," ");
@@ -682,4 +693,8 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 	print_simulator_output("Successfully executed all instructions in ",n_inst," cycles");
 	nl();
 	print_simulator_output("cycle counter value: ",counter_reg);
+	nl();
+	print_simulator_output("number of branches taken: ",branch_counter);
+	nl();
+	print_simulator_output("number of jumps taken: ",jump_counter);
 }
