@@ -15,11 +15,13 @@ void printStats(Cache* cache){
 }
 
 bool load_test(int address, Cache* cache, Dram* dram){
-	return cache->load(address,0,0) == dram->getMemory(address >> 2, address % 4);
+	CORE_UINT(1) dummy;
+	return cache->load(address,0,0,&dummy) == dram->getMemory(address);
 }
 
 void store_test(int address, Cache* cache, Dram* dram){
-	cache->store(address,46,0);
+	CORE_UINT(1) dummy;
+	cache->store(address,46,0,&dummy);
 }
 
 int main(){
@@ -27,8 +29,9 @@ int main(){
 	Dram dram;
 	Cache cache(&dram);
 	int i=0,value;	
+	CORE_UINT(1) dummy;
 	//fill the dram
-	for(i=0;i<120000;i++){
+	for(i=0;i<12000;i++){
 		value = rand() % 120;
 		dram.setMemory(i,value);
 	}
@@ -41,10 +44,10 @@ int main(){
 		}
 	}
 
-	cache.store(8,10,0);
-	cout << cache.load(8,0,0) << endl;
-	cache.store(4000,22,0);
-	cout << cache.load(4004,0,0) << endl;
+	cache.store(8,10,0,&dummy);
+	cout << cache.load(8,0,0,&dummy) << endl;
+	cache.store(4000,22,0,&dummy);
+	cout << cache.load(4000,0,0,&dummy) << endl;
 
 	printStats(&cache);
 	return 0;

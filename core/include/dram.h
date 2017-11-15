@@ -4,18 +4,16 @@
 
 #include <portability.h>
 #include <map>
-#include <vector>
 
 class Dram{
 	
 	private:
-		std::map<CORE_UINT(32), std::vector<CORE_UINT(8)> > memory;
+		std::map<CORE_UINT(32),CORE_UINT(8)> memory;
 
 	public:
 		
-		void setMemory(CORE_UINT(32) address, CORE_UINT(8) value, CORE_UINT(2) byte);
 		void setMemory(CORE_UINT(32) address, CORE_UINT(8) value);
-		CORE_UINT(8) getMemory(CORE_UINT(32) address, CORE_UINT(2) byte);
+		CORE_UINT(8) getMemory(CORE_UINT(32) address);
 
 };
 

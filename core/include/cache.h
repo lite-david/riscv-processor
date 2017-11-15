@@ -4,23 +4,24 @@
 
 #include <portability.h>
 #include <dram.h>
-#define SETS 256
-#define SETBITS 8
-#define TAGBITS 22
-#define WAYS 1
+#define SETS 64
+#define SETBITS 6 // log2(SETS)
 #define LATENCY 30
+#define CACHEBLOCKBYTES 64
+#define IDBITS 6 // log2(CACHEBLOCKBYTES)
+#define TAGBITS 20 // 32 - SETBITS - IDBITS
 
 struct cache_index{
 	CORE_UINT(TAGBITS) tag;
-	CORE_UINT(SETBITS) set;
 	CORE_UINT(1) dirtybit;
+	CORE_UINT(1) invalid;
 };
 
 class Cache{
 
 	private:
 		cache_index index[SETS];
-		CORE_UINT(8) cache[SETS][4];
+		CORE_UINT(8) cache[SETS][CACHEBLOCKBYTES];
 		Dram* dram_location;
 
 		//data structures to collect statistics
@@ -42,7 +43,7 @@ class Cache{
 		
 		CORE_UINT(SETBITS) getSet(CORE_UINT(32) address);
 
-		CORE_UINT(2) getOffset(CORE_UINT(32) address);
+		CORE_UINT(IDBITS) getId(CORE_UINT(32) address);
 
 		CORE_UINT(32) getNumberCacheMiss();
 		CORE_UINT(32) getNumberDramReads();
