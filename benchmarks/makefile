@@ -6,7 +6,7 @@ INCLUDE = ./include
 OUT_DIR = ./build
 SIM = ../simulator/bin/simRISCV
 SIM_OUT = ./simulator_output
-OPT = -mcmodel=medany -static -std=gnu99 -O2 -ffast-math -fno-common -fno-builtin-printf 
+OPT = -mcmodel=medany -static -std=gnu99 -O2 -ffast-math -fno-common -fno-builtin-printf -lm -lgcc
 all: directories $(SIM) $(executables)
 $(OUT_DIR)/matmul4_4.out : $(dependancies) directories 
 	$(CCX) $(OPT) -I $(INCLUDE) src/matmul.c -o $(OUT_DIR)/matmul4_4.out -D SIZE=4
@@ -45,7 +45,7 @@ $(OUT_DIR)/towers.out:directories
 	$(CCX) $(OPT) -I $(INCLUDE) towers/towers_main.c -o $(OUT_DIR)/towers.out 
 	$(SIM) -v -f $(OUT_DIR)/towers.out &> $(SIM_OUT)/towers.debug.out
 $(OUT_DIR)/vvadd.out:directories 
-	$(CCX) $(OPT) -fno-inline -I $(INCLUDE) vvadd/vvadd_main.c -o $(OUT_DIR)/vvadd.out 
+	$(CCX) $(OPT) -I $(INCLUDE) vvadd/vvadd_main.c -o $(OUT_DIR)/vvadd.out 
 	$(SIM) -v -f $(OUT_DIR)/vvadd.out &> $(SIM_OUT)/vvadd.debug.out
 directories: ${OUT_DIR}
 ${OUT_DIR}:
