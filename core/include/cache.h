@@ -35,9 +35,9 @@ class Cache{
 		//Instantiate cache with pointer to DRAM object
 		Cache(Dram* dram);
 
-		void store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CORE_UINT(1)* cache_miss);
+		void store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CORE_UINT(2)* cache_miss);
 			
-		CORE_INT(32) load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) sign, CORE_UINT(1)* cache_miss);
+		CORE_INT(32) load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) sign, CORE_UINT(2)* cache_miss);
 
 		CORE_UINT(TAGBITS) getTag(CORE_UINT(32) address);
 		

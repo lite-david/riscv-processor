@@ -24,7 +24,7 @@ Cache::Cache(Dram* dram){
 	}
 }
 
-void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CORE_UINT(1)* cache_miss){
+void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CORE_UINT(2)* cache_miss){
 	// For store byte, op = 0
 	// For store half word, op = 1
 	// For store word, op = 3
@@ -49,6 +49,7 @@ void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CO
 		n_dram_reads++;
 		*cache_miss = 1;
 		if(dirty){
+			*cache_miss = 2;
 			n_dram_writes++;
 			dram_address.SET_SLC(IDBITS,set);
 			dram_address.SET_SLC(IDBITS+SETBITS,index[set].tag);
@@ -76,7 +77,7 @@ void Cache::store(CORE_UINT(32) address, CORE_INT(32) value, CORE_UINT(2) op, CO
 	index[set].invalid = 0;
 }
 
-CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) sign, CORE_UINT(1)* cache_miss){
+CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) sign, CORE_UINT(2)* cache_miss){
 	// For load byte, op = 0
 	// For load half word, op = 1
 	// For load word, op = 3
@@ -103,6 +104,7 @@ CORE_INT(32) Cache::load(CORE_UINT(32) address, CORE_UINT(2) op, CORE_UINT(1) si
 		n_cache_miss++;
 		*cache_miss = 1;
 		if(dirty){
+			*cache_miss = 2;
 			n_dram_writes++;
 			dram_address.SET_SLC(IDBITS,set);
 			dram_address.SET_SLC(IDBITS+SETBITS,index[set].tag);

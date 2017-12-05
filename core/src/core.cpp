@@ -64,7 +64,7 @@ CORE_INT(32) reg_controller(CORE_UINT(32) address, CORE_UINT(1) op, CORE_INT(32)
 }
 
 void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
-	Cache* ICache, struct FtoDC *ftoDC, CORE_UINT(3) mem_lock, CORE_UINT(1) cache_miss, CORE_UINT(1) *icache_miss){
+	Cache* ICache, struct FtoDC *ftoDC, CORE_UINT(3) mem_lock, CORE_UINT(2) cache_miss, CORE_UINT(2) *icache_miss){
 
 	CORE_UINT(32) next_pc;
 	CORE_UINT(32) ins;
@@ -132,7 +132,7 @@ void Ft(CORE_UINT(32) *pc, CORE_UINT(1) freeze_fetch, struct ExtoMem extoMem,
 
 void DC(struct FtoDC ftoDC, struct ExtoMem extoMem, struct MemtoWB memtoWB, struct DCtoEx *dctoEx,
 CORE_UINT(7) *prev_opCode,CORE_UINT(32) *prev_pc, CORE_UINT(3) mem_lock, CORE_UINT(1) *freeze_fetch,
-CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE_UINT(32) n_inst, CORE_UINT(32)* counter_reg,CORE_UINT(1)* in_function_call){
+CORE_UINT(1) *ex_bubble, CORE_UINT(2) cache_miss, CORE_UINT(2) icache_miss, CORE_UINT(32) n_inst, CORE_UINT(32)* counter_reg,CORE_UINT(1)* in_function_call){
 
 	if(!cache_miss && !icache_miss){
 	CORE_UINT(5) rs1 = ftoDC.instruction.SLC(5,15);       // Decoding the instruction, in the DC stage
@@ -257,7 +257,7 @@ CORE_UINT(1) *ex_bubble, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE
 
 
 void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, CORE_UINT(1) *mem_bubble,
-	CORE_UINT(2) *sys_status, CORE_UINT(1) cache_miss, CORE_UINT(1) icache_miss, CORE_UINT(32)* branch_counter, CORE_UINT(32)* jump_counter,
+	CORE_UINT(2) *sys_status, CORE_UINT(2) cache_miss, CORE_UINT(2) icache_miss, CORE_UINT(32)* branch_counter, CORE_UINT(32)* jump_counter,
 	CORE_UINT(1) in_function_call){
 
 		if(!cache_miss && !icache_miss){
@@ -445,7 +445,7 @@ void Ex(struct DCtoEx dctoEx, struct ExtoMem *extoMem, CORE_UINT(1) *ex_bubble, 
 }
 
 void do_Mem(Cache* DCache, struct ExtoMem extoMem,struct MemtoWB *memtoWB, CORE_UINT(3) *mem_lock,
-CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss, CORE_UINT(1) icache_miss){
+CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(2)* cache_miss, CORE_UINT(2) icache_miss){
 	static CORE_UINT(7) cycles;
 	if(!icache_miss){
 	if(*cache_miss == 0){
@@ -514,6 +514,8 @@ CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss, COR
 							break;
 		           		 }
 						memtoWB->result = DCache->load(memtoWB->result,ld_op,sign,cache_miss);
+						if(*cache_miss == 2)
+							cycles = 57;
 		           		break;
 				case RISCV_ST:
 			   		switch(extoMem.funct3){
@@ -528,6 +530,8 @@ CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss, COR
                         	break;
                     }
 					DCache->store(memtoWB->result,extoMem.datac,st_op,cache_miss);
+					if(*cache_miss == 2)
+						cycles = 57;
 					//MEM_SET(data_memory,memtoWB->result,extoMem.datac,st_op);
 					//data_memory[(memtoWB->result/4)%8192] = extoMem.datac;
 			   	break;
@@ -552,7 +556,7 @@ CORE_UINT(1) *mem_bubble, CORE_UINT(1) *wb_bubble, CORE_UINT(1)* cache_miss, COR
 	}
 }
 
-void doWB(struct MemtoWB *memtoWB, CORE_UINT(1) *wb_bubble, CORE_UINT(1) *early_exit, CORE_UINT(1) icache_miss){
+void doWB(struct MemtoWB *memtoWB, CORE_UINT(1) *wb_bubble, CORE_UINT(1) *early_exit, CORE_UINT(2) icache_miss){
 		if (memtoWB->WBena == 1 && memtoWB->dest != 0 && !icache_miss){
 			reg_controller(memtoWB->dest, 0, memtoWB->result);
 		}
@@ -612,9 +616,9 @@ void doStep(CORE_UINT(32) pc, CORE_UINT(32) nbcycle, Cache* ICache,
 	CORE_UINT(1) ex_bubble = 0;
 	CORE_UINT(1) mem_bubble = 0;
 	CORE_UINT(1) wb_bubble = 0;
-	CORE_UINT(1) cache_miss = 0;
+	CORE_UINT(2) cache_miss = 0;
 	CORE_UINT(1) dummy_signal = 0;
-	CORE_UINT(1) icache_miss = 0;
+	CORE_UINT(2) icache_miss = 0;
 
 	for(i = 0;i<32;i++){
 		#pragma HLS PIPELINE
