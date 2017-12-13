@@ -188,13 +188,13 @@ int towers_verify( struct Towers* this )
     return 6;
   }
 
-  return 0;
+  return 0xcafe;
 }
 
 //--------------------------------------------------------------------------
 // Main
 
-void main()
+int main()
 {
   struct Towers towers;
   int i;
@@ -226,5 +226,6 @@ void main()
   CUSTOMX_R_R_R(0,i,0,0,0) 
   towers_solve( &towers );
   CUSTOMX_R_R_R(0,i,0,0,0) 
+  return towers_verify(&towers);
 }
 

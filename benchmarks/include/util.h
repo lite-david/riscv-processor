@@ -11,6 +11,6 @@ static int verify(int n, const volatile int* test, const int* verify){
 	}
 	if( n%2 != 0 && test[n-1] != verify[n-1])
 		return n;
-	return 11;
+	return 0xcafe;
 }
 #endif	

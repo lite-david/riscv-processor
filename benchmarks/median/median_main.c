@@ -21,6 +21,6 @@ int main( )
 	CUSTOMX_R_R_R(0,i,0,0,0)
    	median( DATA_SIZE, input_data, results_data );
 	CUSTOMX_R_R_R(0,i,0,0,0)
-	return verify(DATA_SIZE,input_data,results_data);
+	return verify(DATA_SIZE,verify_data,results_data);
 }
 
