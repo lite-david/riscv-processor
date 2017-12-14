@@ -8,3 +8,4 @@ mkdir ./testdir/benchmarks
 cp -r ./benchmarks/build ./testdir/benchmarks/
 cp -r ./benchmarks/reference_output ./testdir/benchmarks/
 cp ./util/testscript.sh ./testdir/
+cp ./util/regtracker.py ./testdir/
